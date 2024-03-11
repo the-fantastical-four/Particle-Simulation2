@@ -51,7 +51,7 @@ sf::Vector2f get_offset(Particle particle, Wall wall, float delta) {
 
 }
 
-void update_particle_batch(std::vector<Particle>& particles, const std::vector<Wall>& walls, size_t start, size_t end) {
+void update_particle_batch(std::vector<Particle>& particles, size_t start, size_t end) {
     sf::Time elapsed_time = frame_clock.getElapsedTime(); // frameClock.reset(); 
     float delta = elapsed_time.asSeconds();
 
@@ -68,7 +68,7 @@ void update_particle_batch(std::vector<Particle>& particles, const std::vector<W
     }
 }
 
-std::vector<std::future<void>> update_particles(std::vector<Particle>& particles, const std::vector<Wall>& walls) {
+std::vector<std::thread> update_particles(std::vector<Particle>& particles) {
     const size_t num_particles = particles.size();
     size_t num_threads = std::thread::hardware_concurrency();
 
@@ -78,15 +78,17 @@ std::vector<std::future<void>> update_particles(std::vector<Particle>& particles
 
     const size_t batch_size = (num_particles + num_threads - 1) / num_threads;
 
-    std::vector<std::future<void>> futures;
+    std::vector<std::thread> threads;
 
     for (size_t start = 0; start < num_particles; start += batch_size) {
         size_t end = std::min(start + batch_size, num_particles);
-        auto future = std::async(std::launch::async, update_particle_batch,
-            std::ref(particles), std::cref(walls), start, end);
-        futures.push_back(std::move(future));
+        std::thread thread = std::thread([start, end, &particles]() {
+            update_particle_batch(std::ref(particles), start, end);
+            });
+
+        threads.push_back(std::move(thread));
     }
 
     // return futures
-    return futures;
+    return threads;
 }

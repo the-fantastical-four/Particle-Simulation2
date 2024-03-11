@@ -36,8 +36,8 @@ void SpriteManager::update(sf::RenderWindow& window, bool isExplorerMode) {
     }
 }
 
-std::future<void> SpriteManager::updateAsync(sf::RenderWindow& window, bool isExplorerMode) {
-    return std::async(std::launch::async, [this, &window, isExplorerMode]() {
+std::thread SpriteManager::updateAsync(sf::RenderWindow& window, bool isExplorerMode) {
+    return std::thread([this, &window, isExplorerMode]() {
         update(window, isExplorerMode);
         });
 }
